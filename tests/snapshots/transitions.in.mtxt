@@ -1,0 +1,40 @@
+mtxt 1.0
+
+// Transition test with custom interval to keep output minimal
+transition_interval=200.0
+
+// Basic cc transition (linear)
+0.0 tempo 60
+0.0 cc volume 0.0
+2.0 cc volume 1.0 transition_time=1.0
+
+2.5 tempo 120
+3 tempo 210
+3.5 tempo 190
+4 tempo 60
+
+// CC transition with ease-in curve
+4.0 cc pan -1.0
+6.0 cc pan 1.0 transition_time=1.5 transition_curve=0.5
+
+// CC transition with ease-out curve
+8.0 cc pitch 0.0
+10.0 cc pitch 2.0 transition_time=1.0 transition_curve=-0.5
+
+// Simultaneous tempo and CC transitions (both run from beat 12 to 14)
+12.0 tempo 120 transition_time=2.0 transition_curve=0.0
+10.1 cc volume 0.5
+10.2 cc volume 0.6
+10.3 cc volume 0.7
+10.4 cc volume 0.8
+10.5 cc volume 0.9
+11.0 cc volume 0.1
+10.0 cc reverb 0.0
+12.0 cc reverb 1.0 transition_time=1.0 transition_curve=0.0
+
+// Transition cancellation: new transition interrupts previous one
+16.0 cc expression 0.0
+18.0 cc expression 1.0 transition_time=2.0
+// Cancel previous transition by starting new one mid-way
+19.2 cc expression 0.5 transition_time=1.2
+19.0 cc expression 0.1

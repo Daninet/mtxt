@@ -1,4 +1,4 @@
-# MTXT Specification (Working Draft)
+# MTXT - Music Text Format
 
 > **⚠️ Work in Progress**  
 > This specification is under active development and subject to change. A reference implementation is currently being developed.
@@ -25,40 +25,92 @@ The format is designed to be:
 - **Metadata first-class**: Metadata is integrated as events for extensibility and compatibility.  
 - **One event per line**: Keeps files clean, easy to diff, version control, and searchable.  
 
-
 ## Quick Example
 ```
-version 1.0.0
+mtxt 1.0
 
-meta title Hello World
+meta global title Sunrise Melody
+meta global author Jane Composer
 
-0.0 meta key C major
-0.0 tempo 120
+// Define aliases for drums and chords
+alias kick C1
+alias Cmaj7 C4,E4,G4,B4
+
+0.0 tempo 100
 0.0 timesig 4/4
 
-ch=0 // set default channel to 0
-0.0 note C4 dur=1.0            // default vel=0.8, ch=0
-dur=1.5 // set default note duration to 1.5 beats
-vel=0.8 // set default velocity to 0.8
-0.5 note D4 vel=0.9  // override default velocity with 0.9
-1.0 cc volume 0.8
-1.5 note E4 // uses default duration and velocity
+// Piano melody with volume fade-in
+ch=0
+0.0 voice acoustic grand piano
+0.0 cc volume 0.0
+2.0 cc volume 0.8 transition_time=2.0 transition_curve=0.5
+
+dur=1.0 vel=0.8
+0.0 note C4
+1.0 note E4
+2.0 note G4
+3.0 note Cmaj7 dur=2.0
+
+// Drums using aliases
+ch=10
+dur=0.1 vel=0.9
+0.0 note kick
+1.0 note kick
+
+// Tempo ramp and microtonal note
+4.0 tempo 120 transition_time=1.0
+5.0 note C4+50 ch=0
 ```
+
+
+## Rust Library and CLI Tool
+
+This repository includes a reference implementation in Rust that provides:
+
+- **Library (`mid2mtxt`)**: Rust crate for parsing and writing MTXT files, with optional MIDI conversion features.
+- **CLI tool**: Command-line utility for converting between MIDI and MTXT formats with built-in transforms.
+
+
+### Basic Usage
+
+```bash
+mid2mtxt input.mid output.mtxt
+mid2mtxt input.mtxt output.mid
+```
+
+### Transform Options
+
+The CLI supports various transforms that can be applied during conversion:
+
+**Musical Transforms:**
+- `--transpose <SEMITONES>` - Transpose all notes by semitones (e.g., `--transpose +2` or `--transpose -12`)
+- `-q, --quantize <GRID>` - Quantize timing to a grid (e.g., `4` for quarter notes, `16` for 16th notes)
+- `--swing <AMOUNT>` - Apply swing feel (0.0 to 1.0)
+- `--humanize <AMOUNT>` - Add timing randomization for humanization (0.0 to 1.0)
+
+**Channel Filtering:**
+- `--include-channels <CHANNELS>` - Include only specific channels (comma-separated, e.g., `1,2,10`)
+- `--exclude-channels <CHANNELS>` - Exclude specific channels (comma-separated, e.g., `1,2,10`)
+
+**File Organization:**
+- `--apply-directives` - Apply global directives to events (inline parameters)
+- `--extract-directives` - Extract common inline parameters into global directives
+- `--sort` - Sort events by time
+
+---
+
+## MTXT Specification
 
 ## Versioning
 
 - First line must declare version:
   ```
-  version 1.0.0
+  mtxt 1.0
   ```
 
 ## Comments
 
-- Lines beginning with `//` are comments.
-- Inline comments are also allowed:
-  ```
-  12.5 note C4 dur=1.0 vel=0.8 // this is middle C
-  ```
+- Lines beginning with `//` are comments and ignored by the parser.
 
 ## Structure
 
@@ -93,49 +145,56 @@ Curve definition:
 Notes:
 - Each transition needs a defined value before its end time `T` to establish the start (`V0` at `T − τ`). If no prior value exists, this is an error.
 - Overlapping transitions on the same parameter/channel: the new transition immediately aborts the previous at the current value and takes over. When segments conflict, the one with the higher end beat (`T`) has precedence.
-- Implementations may render transitions as dense discrete MIDI events.
 
 ## Commands
 
-### version
+### version (mtxt)
 ```
-version <semver>
+mtxt <semver>
 ```
-- Declares the file format version. Must be the first non-comment line.
+- Declares the file format version in the major.minor format (e.g., `mtxt 1.0`).
+- Must be the first non-comment line.
 
 ### meta
 ```
-meta <type> <value>
+// global meta (applies to the entire file and all channels)
+meta global <type> <value>
+// channel meta (applies to a single channel), starting from the specified time
+[<time>] meta [ch=<0..65535>] <type> <value>
 ```
 - Adds metadata (e.g., `title`, `author`, `copyright`, `trackname`, custom types).
 - Value extends from the type to the end of the line (or until inline comment).
-- Does not affect playback; carried into MIDI meta events where applicable.
+- Channel is optional, if not specified it takes the channel from the previous `ch` command. 
+- Time is optional, defaults to 0.0.
+- See [Standard Meta Types](#standard-meta-types) for a list of standard types.
+- Newline characters in <value> need to be escaped to not break the syntax
 
 #### Standard Meta Types
 
-| Type         | Description      | Example                              |
-| ------------ | ---------------- | ------------------------------------ |
-| `title`      | Song title       | `meta title My Song`               |
-| `author`     | Composer/author  | `meta author John Doe`             |
-| `copyright`  | Copyright notice | `meta copyright © 2024 Music Corp` |
-| `composer`   | Composer name    | `meta composer John Doe`           |
-| `trackname`  | Track name       | `meta trackname Lead Guitar`       |
-| `instrument` | Instrument name  | `meta instrument Steinway Grand`   |
-| `text`       | General text     | `meta text Verse 1`                |
-| `lyric`      | Lyrics           | `meta lyric Hello world`           |
-| `marker`     | Marker/cue point | `meta marker Chorus`               |
-| `cue`        | Cue point        | `meta cue Solo begins`             |
-| `program`    | Program name     | `meta program Piano Ballad`        |
-| `device`     | Device name      | `meta device OpenPiano 1000`       |
-| `key`        | Key signature    | `meta key C major`                 |
-| `ch1`        | Channel 1's name | `meta ch1 Piano`                   |
-| `date`       | Creation date    | `meta date 2024-01-01`             |
-| `genre`      | Musical genre    | `meta genre Rock`                  |
-| `album`      | Album name       | `meta album Greatest Hits`         |
-| `url`        | Related URL      | `meta url https://example.com`     |
-| `artist`     | Performer name   | `meta artist The Band`             |
-| `license`    | Usage license    | `meta license CC-BY-4.0`           |
-| `generator`  | Software tool    | `meta generator MySequencer v1.0`  |
+| Type           | Description      | Example                                   |
+| -------------- | ---------------- | ----------------------------------------- |
+| `title`        | Song title       | `meta global title My Song`               |
+| `author`       | Composer/author  | `meta global author John Doe`             |
+| `copyright`    | Copyright notice | `meta global copyright © 2024 Music Corp` |
+| `composer`     | Composer name    | `meta global composer John Doe`           |
+| `name`         | Channel name     | `meta ch=1 name Lead Guitar`              |
+| `instrument`   | Instrument name  | `meta ch=2 instrument Steinway Grand`     |
+| `smpte`        | SMPTE offset     | `meta global smpte 00:00:00:00`           |
+| `keysignature` | Key signature    | `4.0 meta ch=3 keysignature C major`      |
+| `text`         | General text     | `meta text Verse 1`                       |
+| `lyric`        | Lyrics           | `5.0 meta lyric Hello world`              |
+| `marker`       | Marker/cue point | `6.0 meta marker Chorus`                  |
+| `cue`          | Cue point        | `7.0 meta cue Solo begins`                |
+| `program`      | Program name     | `meta global program Piano Ballad`        |
+| `device`       | Device name      | `meta global device OpenPiano 1000`       |
+| `key`          | Key signature    | `meta global key C major`                 |
+| `date`         | Creation date    | `meta global date 2024-01-01`             |
+| `genre`        | Musical genre    | `meta global genre Rock`                  |
+| `album`        | Album name       | `meta global album Greatest Hits`         |
+| `url`          | Related URL      | `meta global url https://example.com`     |
+| `artist`       | Performer name   | `meta global artist The Band`             |
+| `license`      | Usage license    | `meta global license CC-BY-4.0`           |
+| `generator`    | Software tool    | `meta global generator MySequencer v1.0`  |
 
 
 ### ch (channel directive)
@@ -236,43 +295,43 @@ transition_interval=<float>
 
 #### Standard CC Names
 
-| Name                | Range         | Description                                                                      |
-| ------------------- | ------------- | -------------------------------------------------------------------------------- |
-| `pitch`             | `-12.0..12.0` | Pitch bend in semitones. 0=none, 1 = one semitone up, `-0.005` = half cent down  |
-| `aftertouch`        | `0.0..1.0`    | Channel or Polyphonic Aftertouch                                                 |
-| `vibrato`           | `0.0..1.0`    | Vibrato depth (Modulation Wheel)                                                 |
-| `vibrato_rate`      | `0.0..1024.0` | Vibrato rate in Hz                                                               |
-| `breath`            | `0.0..1.0`    | Breath controller pressure                                                       |
-| `foot`              | `0.0..1.0`    | Foot controller pedal position                                                   |
-| `portamento`        | `0.0..1.0`    | Portamento glide time                                                            |
-| `volume`            | `0.0..1.0`    | Channel volume level                                                             |
-| `balance`           | `-1.0..1.0`   | Stereo balance (left < 0, right > 0)                                             |
-| `pan`               | `-1.0..1.0`   | Stereo panning position (left < 0, right > 0)                                    |
-| `expression`        | `0.0..1.0`    | Expression (secondary volume, relative to main)                                  |
-| `sustain`           | `0.0..1.0`    | Sustain pedal (damper) on/off (> 0.5 is on)                                      |
-| `portamento_switch` | `0.0..1.0`    | Portamento on/off switch (> 0.5 is on)                                           |
-| `sostenuto`         | `0.0..1.0`    | Sostenuto pedal on/off (> 0.5 is on)                                             |
-| `soft`              | `0.0..1.0`    | Soft pedal (una corda) on/off (> 0.5 is on)                                      |
-| `legato`            | `0.0..1.0`    | Legato footswitch on/off (> 0.5 is on)                                           |
-| `sound_variation`   | `0.0..1.0`    | Sound variation                                                                  |
-| `timbre`            | `0.0..1.0`    | Timbre/harmonic intensity                                                        |
-| `resonance`         | `0.0..1.0`    | Resonance/Harmonic Content                                                       |
-| `attack`            | `0.0..1.0`    | Attack time                                                                      |
-| `decay`             | `0.0..1.0`    | Decay time                                                                       |
-| `hold`              | `0.0..1.0`    | Hold time                                                                        |
-| `sustain_level`     | `0.0..1.0`    | Sustain level (envelope)                                                         |
-| `release`           | `0.0..1.0`    | Release time                                                                     |
-| `cutoff`            | `0.0..1.0`    | Filter cutoff frequency (Brightness)                                             |
-| `reverb`            | `0.0..1.0`    | Reverb send level                                                                |
-| `tremolo`           | `0.0..1.0`    | Tremolo depth                                                                    |
-| `tremolo_rate`      | `0.0..1024.0` | Tremolo rate in Hz                                                               |
-| `chorus`            | `0.0..1.0`    | Chorus send level                                                                |
-| `detune`            | `0.0..1.0`    | Detune depth                                                                     |
-| `phaser`            | `0.0..1.0`    | Phaser depth                                                                     |
-| `distortion`        | `0.0..1.0`    | Distortion/Drive amount                                                          |
-| `compression`       | `0.0..1.0`    | Compression amount                                                               |
-| `local_control`     | `0.0..1.0`    | Local control on/off (> 0.5 is on)                                               |
-| `polyphony`         | `1.0..1024.0` | Polyphony count (rounded to int). 1=mono                                         |
+| Name                | Range         | Description                                                                     |
+| ------------------- | ------------- | ------------------------------------------------------------------------------- |
+| `pitch`             | `-12.0..12.0` | Pitch bend in semitones. 0=none, 1 = one semitone up, `-0.005` = half cent down |
+| `aftertouch`        | `0.0..1.0`    | Channel or Polyphonic Aftertouch                                                |
+| `vibrato`           | `0.0..1.0`    | Vibrato depth (Modulation Wheel)                                                |
+| `vibrato_rate`      | `0.0..1024.0` | Vibrato rate in Hz                                                              |
+| `breath`            | `0.0..1.0`    | Breath controller pressure                                                      |
+| `foot`              | `0.0..1.0`    | Foot controller pedal position                                                  |
+| `portamento`        | `0.0..1.0`    | Portamento glide time                                                           |
+| `volume`            | `0.0..1.0`    | Channel volume level                                                            |
+| `balance`           | `-1.0..1.0`   | Stereo balance (left < 0, right > 0)                                            |
+| `pan`               | `-1.0..1.0`   | Stereo panning position (left < 0, right > 0)                                   |
+| `expression`        | `0.0..1.0`    | Expression (secondary volume, relative to main)                                 |
+| `sustain`           | `0.0..1.0`    | Sustain pedal (damper) on/off (> 0.5 is on)                                     |
+| `portamento_switch` | `0.0..1.0`    | Portamento on/off switch (> 0.5 is on)                                          |
+| `sostenuto`         | `0.0..1.0`    | Sostenuto pedal on/off (> 0.5 is on)                                            |
+| `soft`              | `0.0..1.0`    | Soft pedal (una corda) on/off (> 0.5 is on)                                     |
+| `legato`            | `0.0..1.0`    | Legato footswitch on/off (> 0.5 is on)                                          |
+| `sound_variation`   | `0.0..1.0`    | Sound variation                                                                 |
+| `timbre`            | `0.0..1.0`    | Timbre/harmonic intensity                                                       |
+| `resonance`         | `0.0..1.0`    | Resonance/Harmonic Content                                                      |
+| `attack`            | `0.0..1.0`    | Attack time                                                                     |
+| `decay`             | `0.0..1.0`    | Decay time                                                                      |
+| `hold`              | `0.0..1.0`    | Hold time                                                                       |
+| `sustain_level`     | `0.0..1.0`    | Sustain level (envelope)                                                        |
+| `release`           | `0.0..1.0`    | Release time                                                                    |
+| `cutoff`            | `0.0..1.0`    | Filter cutoff frequency (Brightness)                                            |
+| `reverb`            | `0.0..1.0`    | Reverb send level                                                               |
+| `tremolo`           | `0.0..1.0`    | Tremolo depth                                                                   |
+| `tremolo_rate`      | `0.0..1024.0` | Tremolo rate in Hz                                                              |
+| `chorus`            | `0.0..1.0`    | Chorus send level                                                               |
+| `detune`            | `0.0..1.0`    | Detune depth                                                                    |
+| `phaser`            | `0.0..1.0`    | Phaser depth                                                                    |
+| `distortion`        | `0.0..1.0`    | Distortion/Drive amount                                                         |
+| `compression`       | `0.0..1.0`    | Compression amount                                                              |
+| `local_control`     | `0.0..1.0`    | Local control on/off (> 0.5 is on)                                              |
+| `polyphony`         | `1.0..1024.0` | Polyphony count (rounded to int). 1=mono                                        |
 
 ### voice (instrument selection)
 ```
@@ -290,13 +349,14 @@ transition_interval=<float>
 ```
 - Sets tempo in BPM at `<time>`.
 - Uses global transition defaults unless overridden inline.
+- By default, tempo is at 120 BPM at the start of the file.
 
 ### timesig
 ```
 <time> timesig <NUM>/<DEN>
 ```
 - Sets time signature; affects beat interpretation after `<time>`.
-
+- By default, time signature is 4/4 at the start of the file.
 
 ### tuning
 ```
@@ -341,9 +401,8 @@ transition_interval=<float>
 ### comments
 ```
 // full-line comment
-ch=1  // inline comment
 ```
-- Ignored by the parser; may appear on their own line or inline.
+- Lines beginning with `//` are ignored by the parser.
 
 ---
 

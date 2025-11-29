@@ -1,0 +1,34 @@
+# Rust build artifacts
+/target/
+Cargo.lock
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# MIDI test files
+*.mid
+*.midi
+
+# MTXT output files
+*.mtxt
+
+# Allow specific test file and snapshots
+!**/tests/**/*.mtxt

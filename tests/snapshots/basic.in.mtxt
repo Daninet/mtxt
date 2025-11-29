@@ -1,0 +1,124 @@
+mtxt 1.0
+
+// ========================================
+// Metadata (global, no timestamp)
+// ========================================
+meta global title Comprehensive Test
+meta global artist Test Artist
+meta global copyright © 2025 Test Corp
+meta global composer Test Composer
+meta global trackname Test Track
+meta global instrument Test Instrument
+meta global text Test text metadata
+meta global lyric Test lyrics
+meta global marker Start Marker
+meta global cue Test Cue
+meta global program Test Program
+meta global device Test Device
+meta global key C major
+meta global ch1 Piano Channel
+meta global date 2025-11-25
+meta global genre Test Genre
+meta global album Test Album
+meta global url https://example.com
+meta global license MIT
+meta global generator MTXT Test
+
+// ========================================
+// Global Directives (no timestamp)
+// ========================================
+ch=0
+vel=0.8
+offvel=0.5
+dur=1.0
+
+// ========================================
+// Aliases
+// ========================================
+alias kick C2
+alias snare D2
+alias hihat F#2
+alias Cmaj7 C4,E4,G4,B4
+alias Dmin7 D4,F4,A4,C5
+
+// ========================================
+// Timed Events
+// ========================================
+
+// Tempo and time signature
+0.0 tempo 120
+0.0 timesig 4/4
+
+// Voice selection
+0.0 voice piano, acoustic grand
+
+// Basic notes
+0.0 note C4
+1.0 note D4 vel=0.9
+2.0 note E4 dur=2.0
+
+// Chord using alias
+4.0 note Cmaj7
+5.0 note Dmin7
+
+// Microtonal notes
+6.0 note C4+50
+7.0 note D4-25
+8.0 note E4+12.5
+
+// Note on/off events
+9.0 on F4 vel=0.7
+10.0 off F4 offvel=0.3
+
+// Channel-specific notes
+11.0 note G4 ch=1
+12.0 note A4 ch=2
+
+// Drum notes using aliases
+13.0 note kick ch=9
+13.5 note hihat ch=9
+14.0 note snare ch=9
+14.5 note hihat ch=9
+
+// Control changes
+15.0 cc volume 0.8
+15.0 cc pan -0.5
+16.0 cc pitch 1.0
+17.0 cc reverb 0.6
+18.0 cc vibrato 0.4
+
+// CC with different channels
+19.0 cc volume 0.5 ch=1
+20.0 cc expression 0.7 ch=2
+
+// Tuning
+21.0 tuning E -14.0
+21.0 tuning A# +7.5
+21.0 tuning C4 +0.0
+
+// Notes affected by tuning
+22.0 note E4
+23.0 note C4
+
+// Timed metadata
+24.0 meta marker Chorus
+
+// Voice change
+25.0 voice ch=3 electric guitar, guitar
+
+// Tempo change
+26.0 tempo 140
+
+// Time signature change
+28.0 timesig 3/4
+
+// Reset commands
+30.0 reset ch=9
+32.0 reset tuning
+
+// Sysex
+34.0 sysex F0 7E 7F 09 01 F7
+35.0 sysex F0 AA BB CC DD EE FF F7
+
+// Final reset
+40.0 reset all

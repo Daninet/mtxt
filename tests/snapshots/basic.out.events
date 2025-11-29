@@ -1,0 +1,126 @@
+[       0] Beat 0
+[       0] Meta global title Comprehensive Test
+[       0] Meta global artist Test Artist
+[       0] Meta global copyright © 2025 Test Corp
+[       0] Meta global composer Test Composer
+[       0] Meta global trackname Test Track
+[       0] Meta global instrument Test Instrument
+[       0] Meta global text Test text metadata
+[       0] Meta global lyric Test lyrics
+[       0] Meta global marker Start Marker
+[       0] Meta global cue Test Cue
+[       0] Meta global program Test Program
+[       0] Meta global device Test Device
+[       0] Meta global key C major
+[       0] Meta global ch1 Piano Channel
+[       0] Meta global date 2025-11-25
+[       0] Meta global genre Test Genre
+[       0] Meta global album Test Album
+[       0] Meta global url https://example.com
+[       0] Meta global license MIT
+[       0] Meta global generator MTXT Test
+[       0] Tempo bpm=120
+[       0] TimeSignature 4/4
+[       0] Voice ["piano", "acoustic grand"] ch=0
+[       0] NoteOn C4 vel=0.8 ch=0
+[     500] Beat 1
+[     500] NoteOff C4 off_vel=0.5 ch=0
+[     500] NoteOn D4 vel=0.9 ch=0
+[    1000] Beat 2
+[    1000] NoteOff D4 off_vel=0.5 ch=0
+[    1000] NoteOn E4 vel=0.8 ch=0
+[    1500] Beat 3
+[    2000] Beat 4
+[    2000] NoteOff E4 off_vel=0.5 ch=0
+[    2000] NoteOn C4 vel=0.8 ch=0
+[    2000] NoteOn E4 vel=0.8 ch=0
+[    2000] NoteOn G4 vel=0.8 ch=0
+[    2000] NoteOn B4 vel=0.8 ch=0
+[    2500] Beat 5
+[    2500] NoteOff C4 off_vel=0.5 ch=0
+[    2500] NoteOff E4 off_vel=0.5 ch=0
+[    2500] NoteOff G4 off_vel=0.5 ch=0
+[    2500] NoteOff B4 off_vel=0.5 ch=0
+[    2500] NoteOn D4 vel=0.8 ch=0
+[    2500] NoteOn F4 vel=0.8 ch=0
+[    2500] NoteOn A4 vel=0.8 ch=0
+[    2500] NoteOn C5 vel=0.8 ch=0
+[    3000] Beat 6
+[    3000] NoteOff D4 off_vel=0.5 ch=0
+[    3000] NoteOff F4 off_vel=0.5 ch=0
+[    3000] NoteOff A4 off_vel=0.5 ch=0
+[    3000] NoteOff C5 off_vel=0.5 ch=0
+[    3000] NoteOn C4+50 vel=0.8 ch=0
+[    3500] Beat 7
+[    3500] NoteOff C4+50 off_vel=0.5 ch=0
+[    3500] NoteOn D4-25 vel=0.8 ch=0
+[    4000] Beat 8
+[    4000] NoteOff D4-25 off_vel=0.5 ch=0
+[    4000] NoteOn E4+12.5 vel=0.8 ch=0
+[    4500] Beat 9
+[    4500] NoteOff E4+12.5 off_vel=0.5 ch=0
+[    4500] NoteOn F4 vel=0.7 ch=0
+[    5000] Beat 10
+[    5000] NoteOff F4 off_vel=0.3 ch=0
+[    5500] Beat 11
+[    5500] NoteOn G4 vel=0.8 ch=1
+[    6000] Beat 12
+[    6000] NoteOff G4 off_vel=0.5 ch=1
+[    6000] NoteOn A4 vel=0.8 ch=2
+[    6500] Beat 13
+[    6500] NoteOff A4 off_vel=0.5 ch=2
+[    6500] NoteOn C2 vel=0.8 ch=9
+[    6750] NoteOn F#2 vel=0.8 ch=9
+[    7000] Beat 14
+[    7000] NoteOff C2 off_vel=0.5 ch=9
+[    7000] NoteOn D2 vel=0.8 ch=9
+[    7250] NoteOff F#2 off_vel=0.5 ch=9
+[    7250] NoteOn F#2 vel=0.8 ch=9
+[    7500] Beat 15
+[    7500] NoteOff D2 off_vel=0.5 ch=9
+[    7500] CC volume val=0.8 ch=0
+[    7500] CC pan val=-0.5 ch=0
+[    7750] NoteOff F#2 off_vel=0.5 ch=9
+[    8000] Beat 16
+[    8000] CC pitch val=1 ch=0
+[    8500] Beat 17
+[    8500] CC reverb val=0.6 ch=0
+[    9000] Beat 18
+[    9000] CC vibrato val=0.4 ch=0
+[    9500] Beat 19
+[    9500] CC volume val=0.5 ch=1
+[   10000] Beat 20
+[   10000] CC expression val=0.7 ch=2
+[   10500] Beat 21
+[   11000] Beat 22
+[   11000] NoteOn E4-14 vel=0.8 ch=0
+[   11500] Beat 23
+[   11500] NoteOff E4-14 off_vel=0.5 ch=0
+[   11500] NoteOn C4 vel=0.8 ch=0
+[   12000] Beat 24
+[   12000] NoteOff C4 off_vel=0.5 ch=0
+[   12000] Meta ch=0 marker Chorus
+[   12500] Beat 25
+[   12500] Voice ["electric guitar", "guitar"] ch=3
+[   13000] Beat 26
+[   13000] Tempo bpm=140
+[   13429] Beat 27
+[   13857] Beat 28
+[   13857] TimeSignature 3/4
+[   14286] Beat 29
+[   14714] Beat 30
+[   14714] Reset ch=9
+[   15143] Beat 31
+[   15571] Beat 32
+[   15571] Reset tuning
+[   16000] Beat 33
+[   16429] Beat 34
+[   16429] SysEx [F0, 7E, 7F, 09, 01, F7]
+[   16857] Beat 35
+[   16857] SysEx [F0, AA, BB, CC, DD, EE, FF, F7]
+[   17286] Beat 36
+[   17714] Beat 37
+[   18143] Beat 38
+[   18571] Beat 39
+[   19000] Beat 40
+[   19000] Reset all

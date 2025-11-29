@@ -1,0 +1,104 @@
+name: Build CLI
+
+on:
+  push:
+    branches: [ "master" ]
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform_name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            platform_name: Windows x64
+            binary_name: mtxt.exe
+            asset_name: mtxt-win-x64
+            use_cross: false
+          - os: macos-14
+            target: aarch64-apple-darwin
+            platform_name: macOS ARM64
+            binary_name: mtxt
+            asset_name: mtxt-mac-arm
+            use_cross: false
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            platform_name: Linux x64
+            binary_name: mtxt
+            asset_name: mtxt-linux-x64
+            use_cross: false
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            platform_name: Linux ARM64
+            binary_name: mtxt
+            asset_name: mtxt-linux-arm64
+            use_cross: true
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: ${{ matrix.target }}
+
+    - name: Install cross
+      if: matrix.use_cross
+      uses: taiki-e/install-action@cross
+
+    - name: Test
+      run: |
+        if [ "${{ matrix.use_cross }}" == "true" ]; then
+          cross test --target ${{ matrix.target }} --features cli,midi
+        else
+          cargo test --target ${{ matrix.target }} --features cli,midi
+        fi
+      shell: bash
+
+    - name: Build
+      run: |
+        if [ "${{ matrix.use_cross }}" == "true" ]; then
+          cross build --release --target ${{ matrix.target }} --features cli,midi
+        else
+          cargo build --release --target ${{ matrix.target }} --features cli,midi
+        fi
+      shell: bash
+
+    - name: Rename binary
+      run: mv target/${{ matrix.target }}/release/${{ matrix.binary_name }} target/${{ matrix.target }}/release/${{ matrix.asset_name }}
+      shell: bash
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.asset_name }}
+        path: target/${{ matrix.target }}/release/${{ matrix.asset_name }}
+
+  release:
+    name: Create Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: artifacts/*
+          generate_release_notes: true

@@ -1,0 +1,73 @@
+[       0] Beat 0
+[       0] Tempo bpm=60
+[       0] CC volume val=0 ch=0
+[    1000] Beat 1
+[    1200] CC volume val=0.2 ch=0
+[    1400] CC volume val=0.4 ch=0
+[    1600] CC volume val=0.6 ch=0
+[    1800] CC volume val=0.8 ch=0
+[    2000] Beat 2
+[    2000] CC volume val=1 ch=0
+[    2500] Tempo bpm=120
+[    2750] Beat 3
+[    2750] Tempo bpm=210
+[    2893] Tempo bpm=190
+[    3051] Beat 4
+[    3051] Tempo bpm=60
+[    3051] CC pan val=-1 ch=0
+[    3751] CC pan val=-0.866351 ch=0
+[    3951] CC pan val=-0.728277 ch=0
+[    4051] Beat 5
+[    4151] CC pan val=-0.5744 ch=0
+[    4351] CC pan val=-0.385758 ch=0
+[    4551] CC pan val=-0.135802 ch=0
+[    4751] CC pan val=0.2096 ch=0
+[    4951] CC pan val=0.692168 ch=0
+[    5051] Beat 6
+[    5051] CC pan val=1 ch=0
+[    6051] Beat 7
+[    7051] Beat 8
+[    7051] CC pitch val=0 ch=0
+[    8051] Beat 9
+[    8251] CC pitch val=0.0096 ch=0
+[    8451] CC pitch val=0.3296 ch=0
+[    8651] CC pitch val=0.8256 ch=0
+[    8851] CC pitch val=1.4016 ch=0
+[    9051] Beat 10
+[    9051] CC reverb val=0 ch=0
+[    9051] CC pitch val=2 ch=0
+[    9151] CC volume val=0.5 ch=0
+[    9251] CC volume val=0.6 ch=0
+[    9251] Tempo bpm=66
+[    9342] CC volume val=0.7 ch=0
+[    9433] CC volume val=0.8 ch=0
+[    9451] Tempo bpm=72.599998
+[    9517] CC volume val=0.9 ch=0
+[    9651] Tempo bpm=79.860001
+[    9851] Tempo bpm=87.845993
+[    9900] Beat 11
+[    9900] CC volume val=0.1 ch=0
+[   10051] Tempo bpm=96.6306
+[   10100] CC reverb val=0.29282 ch=0
+[   10251] Tempo bpm=106.293655
+[   10295] CC reverb val=0.614922 ch=0
+[   10451] Tempo bpm=116.923019
+[   10491] CC reverb val=0.969234 ch=0
+[   10503] Beat 12
+[   10503] Tempo bpm=120
+[   10503] CC reverb val=1 ch=0
+[   11003] Beat 13
+[   11503] Beat 14
+[   12003] Beat 15
+[   12503] Beat 16
+[   12503] CC expression val=0 ch=0
+[   12703] CC expression val=0.2 ch=0
+[   12903] CC expression val=0.4 ch=0
+[   13003] Beat 17
+[   13103] CC expression val=0.6 ch=0
+[   13303] CC expression val=0.8 ch=0
+[   13503] Beat 18
+[   13703] CC expression val=0.7 ch=0
+[   13903] CC expression val=0.6 ch=0
+[   14003] Beat 19
+[   14003] CC expression val=0.1 ch=0
