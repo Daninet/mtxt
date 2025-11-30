@@ -66,7 +66,7 @@ impl TransitionProcessor {
             let start_value = *self
                 .last_values
                 .get(&key)
-                .expect(format!("Error getting key {}", key).as_str());
+                .unwrap_or_else(|| panic!("Error getting key {}", key));
 
             let next_pos = (record.transition_interval * 1000.0)
                 / (record.transition_time.as_micros(self.current_bpm as f64) as f32);
@@ -97,7 +97,7 @@ impl TransitionProcessor {
 
         let mut res = record.record.clone();
         res.set_time(self.current_micros);
-        return Some(res);
+        Some(res)
     }
 
     fn consume_transition(&mut self, transition_idx: usize) -> Option<MtxtOutputRecord> {
@@ -157,7 +157,7 @@ impl TransitionProcessor {
             transition.next_micros = self.current_micros + remaining_beats.as_micros(bpm as f64);
         }
 
-        return Some(res);
+        Some(res)
     }
 
     fn consume_beat(&mut self, next_beat_micros: u64) -> Option<MtxtOutputRecord> {
@@ -225,7 +225,7 @@ impl TransitionProcessor {
             return self.consume_record(next_record_micros);
         }
 
-        return self.consume_transition(transition_idx);
+        self.consume_transition(transition_idx)
     }
 
     fn process_item(&mut self) -> Option<MtxtOutputRecord> {

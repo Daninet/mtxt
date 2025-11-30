@@ -10,6 +10,12 @@ pub struct MtxtFile {
     pub records: Vec<MtxtRecord>,
 }
 
+impl Default for MtxtFile {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MtxtFile {
     pub fn new() -> Self {
         Self {
@@ -94,7 +100,7 @@ impl fmt::Display for MtxtFile {
                 }
                 // Formatting-only records
                 MtxtRecord::EmptyLine => {
-                    writeln!(f, "")?;
+                    writeln!(f)?;
                 }
                 MtxtRecord::Comment { text } => {
                     writeln!(f, "// {}", text)?;

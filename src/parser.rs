@@ -10,6 +10,12 @@ pub fn parse_mtxt(content: &str) -> Result<MtxtFile> {
     parser.parse(content)
 }
 
+impl Default for MtxtParser {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MtxtParser {
     pub fn new() -> Self {
         Self {}

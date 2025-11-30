@@ -17,15 +17,15 @@ fn extract_property<T: PartialEq + Clone + Copy + std::fmt::Debug>(
         // Check if current record has the property explicitly set
         if let Some(val) = get_fn(rec) {
             // Check if it matches the current global value
-            if let Some(global) = current_global_value {
-                if val == global {
-                    // Matches global, just remove inline property
-                    let mut new_rec = rec.clone();
-                    remove_fn(&mut new_rec);
-                    result.push(new_rec);
-                    i += 1;
-                    continue;
-                }
+            if let Some(global) = current_global_value
+                && val == global
+            {
+                // Matches global, just remove inline property
+                let mut new_rec = rec.clone();
+                remove_fn(&mut new_rec);
+                result.push(new_rec);
+                i += 1;
+                continue;
             }
 
             // Start looking ahead for a run
@@ -139,9 +139,10 @@ pub fn transform(records: &[MtxtRecord]) -> Vec<MtxtRecord> {
             _ => None,
         },
         |v| MtxtRecord::DurationDirective { duration: v },
-        |r| match r {
-            MtxtRecord::Note { duration, .. } => *duration = None,
-            _ => {}
+        |r| {
+            if let MtxtRecord::Note { duration, .. } = r {
+                *duration = None
+            }
         },
     );
 

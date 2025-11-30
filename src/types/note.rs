@@ -90,11 +90,10 @@ impl FromStr for Note {
         let mut pitch_str = pitch_char.to_string();
 
         // Check for accidental
-        if let Some(&next_char) = chars.peek() {
-            if next_char == '#' || next_char == 'b' || next_char == 'B' {
+        if let Some(&next_char) = chars.peek()
+            && (next_char == '#' || next_char == 'b' || next_char == 'B') {
                 pitch_str.push(chars.next().unwrap());
             }
-        }
 
         let pitch_class: PitchClass = pitch_str.parse()?;
 

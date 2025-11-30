@@ -16,18 +16,16 @@ pub fn transform(records: &[MtxtRecord], channels: &HashSet<u16>) -> Vec<MtxtRec
             | MtxtRecord::NoteOff { channel, .. }
             | MtxtRecord::Voice { channel, .. } => {
                 if let Some(channel) = channel {
-                    !channels.contains(&channel)
+                    !channels.contains(channel)
+                } else if let Some(curr) = current_channel {
+                    !channels.contains(&curr)
                 } else {
-                    if let Some(curr) = current_channel {
-                        !channels.contains(&curr)
-                    } else {
-                        false
-                    }
+                    false
                 }
             }
             MtxtRecord::ControlChange { channel, .. } => {
                 // if channel is None, affects all channels
-                channel.map_or(true, |ch| !channels.contains(&ch))
+                channel.is_none_or(|ch| !channels.contains(&ch))
             }
             MtxtRecord::ChannelDirective { channel } => {
                 current_channel = Some(*channel);

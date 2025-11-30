@@ -65,7 +65,7 @@ fn convert_smf_to_mtxt(smf: &Smf) -> Result<MtxtFile> {
 
     // Get timing information
     let ticks_per_quarter: u16 = match smf.header.timing {
-        Timing::Metrical(ticks) => ticks.as_int() as u16,
+        Timing::Metrical(ticks) => ticks.as_int(),
         Timing::Timecode(_, _) => 480, // Default fallback
     };
 

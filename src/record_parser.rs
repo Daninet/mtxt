@@ -42,7 +42,7 @@ fn try_parse_directive(part: &str) -> Result<Option<ParsedDirective>> {
                 let channel: u16 = value
                     .parse()
                     .map_err(|_| anyhow::anyhow!("Invalid channel number"))?;
-                return Ok(Some(ParsedDirective::Channel { channel }));
+                Ok(Some(ParsedDirective::Channel { channel }))
             }
             "vel" => {
                 let velocity: f32 = value
@@ -51,7 +51,7 @@ fn try_parse_directive(part: &str) -> Result<Option<ParsedDirective>> {
                 if !(0.0..=1.0).contains(&velocity) {
                     bail!("Velocity must be 0.0-1.0");
                 }
-                return Ok(Some(ParsedDirective::Velocity { velocity }));
+                Ok(Some(ParsedDirective::Velocity { velocity }))
             }
             "offvel" => {
                 let off_velocity: f32 = value
@@ -60,25 +60,25 @@ fn try_parse_directive(part: &str) -> Result<Option<ParsedDirective>> {
                 if !(0.0..=1.0).contains(&off_velocity) {
                     bail!("Off velocity must be 0.0-1.0");
                 }
-                return Ok(Some(ParsedDirective::OffVelocity { off_velocity }));
+                Ok(Some(ParsedDirective::OffVelocity { off_velocity }))
             }
             "dur" => {
                 let duration: BeatTime = value
                     .parse()
                     .map_err(|_| anyhow::anyhow!("Invalid duration value"))?;
-                return Ok(Some(ParsedDirective::Duration { duration }));
+                Ok(Some(ParsedDirective::Duration { duration }))
             }
             "transition_curve" => {
                 let curve: f32 = value
                     .parse()
                     .map_err(|_| anyhow::anyhow!("Invalid transition_curve value"))?;
-                return Ok(Some(ParsedDirective::TransitionCurve { curve }));
+                Ok(Some(ParsedDirective::TransitionCurve { curve }))
             }
             "transition_time" => {
                 let time: BeatTime = value
                     .parse()
                     .map_err(|_| anyhow::anyhow!("Invalid transition_time value"))?;
-                return Ok(Some(ParsedDirective::TransitionTime { duration: time }));
+                Ok(Some(ParsedDirective::TransitionTime { duration: time }))
             }
             "transition_interval" => {
                 let interval: f32 = value
@@ -87,12 +87,12 @@ fn try_parse_directive(part: &str) -> Result<Option<ParsedDirective>> {
                 if interval < 0.0 {
                     bail!("Transition interval must be >= 0.0");
                 }
-                return Ok(Some(ParsedDirective::TransitionInterval { interval }));
+                Ok(Some(ParsedDirective::TransitionInterval { interval }))
             }
             _ => bail!("Invalid directive"),
         }
     } else {
-        return Ok(None);
+        Ok(None)
     }
 }
 
@@ -130,7 +130,7 @@ fn try_parse_global_directive(part: &str) -> Result<Option<MtxtRecord>> {
 }
 
 fn parse_note_event(time: BeatTime, parts: &[&str]) -> Result<MtxtRecord> {
-    if parts.len() < 1 {
+    if parts.is_empty() {
         bail!("Note event requires note name");
     }
 
@@ -176,7 +176,7 @@ fn parse_note_event(time: BeatTime, parts: &[&str]) -> Result<MtxtRecord> {
 }
 
 fn parse_note_on_event(time: BeatTime, parts: &[&str]) -> Result<MtxtRecord> {
-    if parts.len() < 1 {
+    if parts.is_empty() {
         bail!("Note on event requires note name");
     }
 
@@ -212,7 +212,7 @@ fn parse_note_on_event(time: BeatTime, parts: &[&str]) -> Result<MtxtRecord> {
 }
 
 fn parse_note_off_event(time: BeatTime, parts: &[&str]) -> Result<MtxtRecord> {
-    if parts.len() < 1 {
+    if parts.is_empty() {
         bail!("Note off event requires note name");
     }
 
@@ -370,7 +370,7 @@ fn parse_reset_event(time: BeatTime, parts: &[&str]) -> Result<MtxtRecord> {
 }
 
 fn parse_tempo_event(time: BeatTime, parts: &[&str]) -> Result<MtxtRecord> {
-    if parts.len() < 1 {
+    if parts.is_empty() {
         bail!("Tempo event requires a BPM value");
     }
 

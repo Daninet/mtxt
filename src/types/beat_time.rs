@@ -27,7 +27,7 @@ impl BeatTime {
     }
 
     pub fn from_parts(beat: u32, frac: f32) -> Self {
-        assert!(frac >= 0.0 && frac <= 1.0);
+        assert!((0.0..=1.0).contains(&frac));
         if frac == 1.0 {
             return Self::from_parts(beat + 1, 0.0);
         }
@@ -55,11 +55,11 @@ impl BeatTime {
     }
 
     fn repr_beat(&self) -> u64 {
-        (self.repr >> Self::FRAC_BEAT_BITS) as u64
+        self.repr >> Self::FRAC_BEAT_BITS
     }
 
     fn repr_frac(&self) -> u64 {
-        (self.repr & Self::FRAC_BEAT_MASK) as u64
+        self.repr & Self::FRAC_BEAT_MASK
     }
 
     fn repr_frac_f32(&self) -> f32 {
@@ -80,7 +80,7 @@ impl BeatTime {
             let grid_index = (total_sub_units / grid_size).round() as u32;
             let base_position = grid_index as f64 * grid_size;
 
-            if grid_index % 2 == 0 {
+            if grid_index.is_multiple_of(2) {
                 // On-beat: snap to the main grid
                 base_position
             } else {
@@ -124,7 +124,7 @@ impl fmt::Display for BeatTime {
 
 impl fmt::Debug for BeatTime {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Time({})", self.to_string())
+        write!(f, "Time({})", self)
     }
 }
 

@@ -146,14 +146,13 @@ pub fn controller_name_to_midi(name: &str, value: f32) -> Result<MidiControllerE
             }
 
             // Try parsing as a numeric CC number
-            if let Ok(num) = name.parse::<u8>() {
-                if num <= 127 {
+            if let Ok(num) = name.parse::<u8>()
+                && num <= 127 {
                     return Ok(MidiControllerEvent::CC {
                         number: num,
                         value: (value.clamp(0.0, 1.0) * 127.0) as u8,
                     });
                 }
-            }
 
             Err(anyhow!("Unknown controller name: {}", name))
         }
