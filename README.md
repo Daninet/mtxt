@@ -1,34 +1,24 @@
 # MTXT - Music Text Format
 
-> **⚠️ Work in Progress**  
-> This specification is under active development and subject to change. A reference implementation is currently being developed.
-
 ## Purpose
 MTXT is a human-editable, text-based representation of music information.  
 It aims to simplify the process of writing, reading, and editing musical data without requiring specialized binary tools.  
-The format is designed to be:
-- **Human friendly**: Use of musical note names (C4, D#3, etc.), readable times, and intuitive syntax.  
-- **LLM compatible**: Simple, consistent text format that can be easily generated and manipulated by language models.  
-- **Real-time ready**: Supports streaming musical events and real-time data transfer with transitions and flexible timing.  
-- **Editable**: One event per line, easy to search and modify with any text editor.  
-- **Hand-writable**: Efficient syntax with aliases for custom note names and chords, making hand-crafted files practical and expressive.  
-- **Infinitely customizable**: Aliases enable endless possibilities for personalized musical vocabularies and shortcuts.  
-- **Microtonal support**: Built-in cents notation for notes (e.g., `C4+50`, `D4-25`) and global tuning commands for alternate tuning systems and just intonation.  
-- **Future-proof**: Supports unlimited channels (0-65535), arbitrary CC parameters with custom string keys, float-based values for extensibility, and smooth transitions for expressive parameter changes.  
 
-## Design Considerations
-- **Easy manipulation**: Format prioritizes straightforward human and LLM editing of musical data over parsing complexity.  
-- **Beat-based timing**: Events are placed on fractional beats using simple decimal notation (e.g., `3.5`).  
-- **Flexible organization**: Events can be written in any order in the file, with the parser handling chronological sorting.  
-- **Expressive aliases**: Define custom note names and chord shortcuts that can be redefined at any point in the file.  
-- **Smooth transitions**: Built-in support for gliding continuous parameters (CC, tempo) with customizable curves and timing.  
-- **Metadata first-class**: Metadata is integrated as events for extensibility and compatibility.  
-- **One event per line**: Keeps files clean, easy to diff, version control, and searchable.  
+## Features
+- **Beat-based**: Events are placed on fractional beats using simple decimal notation (e.g. `3.25` = 3 beats and 1 quarter note).  
+- **One event per line**: Easy to search and modify with any text editor.
+- **Human-friendly**: Use of musical note names (C4, D#3, etc.) and custom note aliases (e.g. `kick` or `Cmaj7`). Hand-crafted files are practical and expressive.
+- **Transitions**: Built-in support for gliding continuous parameters (CC, tempo) with customizable curves and timing.
+- **Real-time ready**: Supports streaming musical events and real-time data transfer with transitions and flexible timing.
+- **Microtonal support**: Built-in cents notation for notes (e.g. `C4+50`, `D4-25`) and global tuning commands for alternate tuning systems and just intonation.  
+- **Flexible organization**: Events can be written in any order in the file, with the parser handling chronological sorting.
+- **MIDI compatible**: Reference implementation includes MIDI to MTXT and MTXT to MIDI conversion.
+- **LLM compatible**: Can be easily generated and manipulated by language models.
+- **Future-proof**: Supports up to 65535 channels, arbitrary CC parameters with custom string keys and custom metadata.  
 
 ## Quick Example
 ```
 mtxt 1.0
-
 meta global title Sunrise Melody
 meta global author Jane Composer
 
@@ -36,38 +26,45 @@ meta global author Jane Composer
 alias kick C1
 alias Cmaj7 C4,E4,G4,B4
 
+// Global tempo and time signature
 0.0 tempo 100
 0.0 timesig 4/4
 
-// Piano melody with volume fade-in
+// Set defaults for channel, duration, and velocity
 ch=0
-0.0 voice acoustic grand piano
+dur=1.0
+vel=0.8
+
+// Set voice. "John's bright grand" has precedence, but it falls back to a more generic "piano" if not found.
+0.0 voice piano, John's bright grand
+
+// Start silently
 0.0 cc volume 0.0
-2.0 cc volume 0.8 transition_time=2.0 transition_curve=0.5
 
-dur=1.0 vel=0.8
+// Fade in volume over 3.0 beats, ending at beat 4.0
+4.0 cc volume 1.0 transition_time=3.0 transition_curve=0.5
+
+// Play melody (uses default duration and velocity from above, unless overridden)
 0.0 note C4
-1.0 note E4
-2.0 note G4
-3.0 note Cmaj7 dur=2.0
+1.0 note E4 
+2.0 note G4 vel=0.5
+2.0 note G4 vel=0.5
 
-// Drums using aliases
-ch=10
-dur=0.1 vel=0.9
-0.0 note kick
-1.0 note kick
+// Chords can also be played (defined above as an alias for C4,E4,G4,B4 notes)
+1.0 note Cmaj7 dur=2.0 vel=0.2
 
-// Tempo ramp and microtonal note
-4.0 tempo 120 transition_time=1.0
-5.0 note C4+50 ch=0
+// Tempo ramp
+8.0 tempo 120 transition_time=4.0
+
+// Microtonal note (12TET equal temperament C4 + 50 cents)
+3.0 note C4+50
 ```
-
 
 ## Rust Library and CLI Tool
 
 This repository includes a reference implementation in Rust that provides:
 
-- **Library (`mid2mtxt`)**: Rust crate for parsing and writing MTXT files, with optional MIDI conversion features.
+- **Library (`mid2mtxt`)**: Rust crate for parsing and writing MTXT files, with MIDI conversion features.
 - **CLI tool**: Command-line utility for converting between MIDI and MTXT formats with built-in transforms.
 
 
@@ -119,32 +116,11 @@ The CLI supports various transforms that can be applied during conversion:
   2. Global metadata (optional)
   3. Events (can be in any timestamp order)
 
-## Transitions
+## Timing
 
-Use transitions to glide a continuous parameter to a target value by a specific beat, with a chosen feel.
-
-- Supported on: `cc`, `tempo`.
-- Fields:
-  - `transition_curve=<alpha>` controls the feel of the glide:
-    - `0.0` (linear): steady change from start to finish (default)
-    - `> 0` (gentle start → speeds up): musical "ease-in", swells late.
-    - `< 0` (fast start → settles): musical "ease-out", arrives smoothly.
-  - `transition_time=<duration>` (`τ`) is the glide length in beats. Default `0.0` (instant jump). The change begins at `T − τ` and reaches the target at command time `T`.
-  - `transition_interval=<duration>` is the minimum time between each value update in milliseconds. Default `1.0` (as fast as possible).
-
-Examples:
-- `0.0 cc pitch 0.0` — pitch is `0.0` at `0.0`.
-- `1.0 cc pitch 0.5 transition_time=0.2` — pitch glides to `0.5` value between beats `0.8` and `1.0`.
-- `5.0 cc pitch 0.95 transition_curve=0.5 transition_time=1.5` — starts at `3.5`, accelerates toward `0.95` near `5.0`.
-- `7.0 cc volume 0.2 transition_curve=-0.4 transition_time=2.0` — begins at `5.0`, moves quickly then coasts into `0.2` at `2.0`.
-
-Curve definition:
-- `value(t) = V0 + (V1 − V0) * ( s + max(α,0) * (s^4 − s) − max(−α,0) * ((1 − (1 − s)^4) − s) )`
-- `s = (t − (T − τ)) / τ`; if `τ = 0`, the change is instant at `T`.
-
-Notes:
-- Each transition needs a defined value before its end time `T` to establish the start (`V0` at `T − τ`). If no prior value exists, this is an error.
-- Overlapping transitions on the same parameter/channel: the new transition immediately aborts the previous at the current value and takes over. When segments conflict, the one with the higher end beat (`T`) has precedence.
+- All times are in beats specified as fractional numbers. e.g. `3.25` means 3 beats and 1 quarter note.
+- This allows changing the tempo and time signature without affecting the timing of events.
+- Precision is limited to 5 decimal places (5 microseconds at 120 BPM).
 
 ## Commands
 
@@ -164,10 +140,10 @@ meta global <type> <value>
 ```
 - Adds metadata (e.g., `title`, `author`, `copyright`, `trackname`, custom types).
 - Value extends from the type to the end of the line (or until inline comment).
-- Channel is optional, if not specified it takes the channel from the previous `ch` command. 
+- Channel is optional, if not specified it inherits the channel from the previous `ch` command. 
 - Time is optional, defaults to 0.0.
 - See [Standard Meta Types](#standard-meta-types) for a list of standard types.
-- Newline characters in <value> need to be escaped to not break the syntax
+- Newline characters in <value> need to be escaped to avoid breaking the syntax.
 
 #### Standard Meta Types
 
@@ -289,8 +265,8 @@ transition_interval=<float>
 - Sends a control change. `<controller>` identifies the parameter.
 - `<value>` is `[0.0..1.0]`. Uses default `ch` unless overridden.
 - Uses global transition defaults unless overridden inline.
-- Optional `note` to apply CC to a specific note. In case note is specified, it applies to that note only.
-- When note is not specified, it applies to all notes within a channel. 
+- Optional `note` to apply CC to a specific note. If a note is specified, it applies to that note only.
+- When a note is not specified, it applies to all notes within a channel. 
 - Arbitrary string keys can be used for custom parameters (e.g., `cc my_param 0.5`).
 
 #### Standard CC Names
@@ -340,7 +316,7 @@ transition_interval=<float>
 - Sets the instrument voice for the channel.
 - `<voice_list>` is a comma-separated list of voice names (e.g., `piano, acoustic piano, john's super piano`).
 - The synthesizer should use the **last** voice in the list that it supports.
-- It is advised to use a standard voice from `instruments.md` as the first item for compatibility.
+- It is recommended to use a standard voice from `instruments.md` as the first item for compatibility.
 
 
 ### tempo
@@ -362,6 +338,7 @@ transition_interval=<float>
 ```
 <time> tuning <target> <cents>
 ```
+- By default, notes are defined with equal temperament tuning (12TET).
 - Sets the global tuning offset for a note or pitch class.
 - `<target>` can be a pitch class (e.g., `C`, `F#`) or a specific note (e.g., `C4`).
 - `<cents>` is in range `[-100.0..+100.0]`. Positive values must use `+`.
@@ -404,11 +381,38 @@ transition_interval=<float>
 ```
 - Lines beginning with `//` are ignored by the parser.
 
+## Transitions
+
+Use transitions to glide a continuous parameter to a target value by a specific beat, with a chosen feel.
+
+- Supported on: `cc`, `tempo`.
+- Fields:
+  - `transition_curve=<alpha>` controls the feel of the glide:
+    - `0.0` (linear): steady change from start to finish (default)
+    - `> 0` (gentle start → speeds up): musical "ease-in", swells late.
+    - `< 0` (fast start → settles): musical "ease-out", arrives smoothly.
+  - `transition_time=<duration>` (`τ`) is the glide length in beats. Defaults to `0.0` (instant jump). The change begins at `T − τ` and reaches the target at command time `T`.
+  - `transition_interval=<duration>` is the minimum time between each value update in milliseconds. Defaults to `1.0` (as fast as possible).
+
+Examples:
+- `0.0 cc pitch 0.0` — pitch is `0.0` at `0.0`.
+- `1.0 cc pitch 0.5 transition_time=0.2` — pitch glides to `0.5` value between beats `0.8` and `1.0`.
+- `5.0 cc pitch 0.95 transition_curve=0.5 transition_time=1.5` — starts at `3.5`, accelerates toward `0.95` near `5.0`.
+- `7.0 cc volume 0.2 transition_curve=-0.4 transition_time=2.0` — begins at `5.0`, moves quickly then coasts into `0.2` at `7.0`.
+
+Curve definition:
+- `value(t) = V0 + (V1 − V0) * ( s + max(α,0) * (s^4 − s) − max(−α,0) * ((1 − (1 − s)^4) − s) )`
+- `s = (t − (T − τ)) / τ`; if `τ = 0`, the change is instant at `T`.
+
+Notes:
+- Each transition needs a defined value before its end time `T` to establish the start (`V0` at `T − τ`). If no prior value exists, this is an error.
+- Overlapping transitions on the same parameter/channel: the new transition immediately aborts the previous at the current value and takes over. When segments conflict, the one with the later end beat (`T`) has precedence.
+
+
 ---
 
 ## License
 
 Copyright © 2025 Dani Biró
 
-Specification is licensed under the MIT License.
-
+Licensed under the MIT License.
