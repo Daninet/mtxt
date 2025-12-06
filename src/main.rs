@@ -109,6 +109,12 @@ fn main() -> Result<()> {
                 .action(clap::ArgAction::SetTrue),
         )
         .arg(
+            Arg::new("merge-notes")
+                .help("Merge note on / off pairs into note shorthand events with durations")
+                .long("merge-notes")
+                .action(clap::ArgAction::SetTrue),
+        )
+        .arg(
             Arg::new("quantize")
                 .help("Quantize grid (e.g. 4 for quarter notes, 16 for 16th notes)")
                 .long("quantize")
@@ -137,6 +143,7 @@ fn main() -> Result<()> {
     let verbose = matches.get_flag("verbose");
     let apply_directives = matches.get_flag("apply-directives");
     let sort_by_time = matches.get_flag("sort");
+    let merge_notes = matches.get_flag("merge-notes");
     let extract_directives = matches.get_flag("extract-directives");
 
     let transpose_amount = matches.get_one::<i32>("transpose").copied().unwrap_or(0);
@@ -161,6 +168,7 @@ fn main() -> Result<()> {
         apply_directives,
         extract_directives,
         sort_by_time,
+        merge_notes,
         quantize_grid,
         quantize_swing,
         quantize_humanize,

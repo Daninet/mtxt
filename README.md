@@ -94,6 +94,7 @@ The CLI supports various transforms that can be applied during conversion:
 **File Organization:**
 - `--apply-directives` - Apply global directives to events (inline parameters)
 - `--extract-directives` - Extract common inline parameters into global directives
+- `--merge-notes` - Merge note on / off pairs into note shorthand events with durations
 - `--sort` - Sort events by time
 
 ---

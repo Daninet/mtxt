@@ -2,6 +2,7 @@ pub mod apply;
 pub mod exclude;
 pub mod extract;
 pub mod include;
+pub mod merge;
 pub mod offset;
 pub mod quantize;
 pub mod sort;
@@ -14,6 +15,7 @@ pub struct TransformDescriptor {
     pub apply_directives: bool,
     pub extract_directives: bool,
     pub sort_by_time: bool,
+    pub merge_notes: bool,
     pub quantize_grid: u32,
     pub quantize_swing: f32,
     pub quantize_humanize: f32,
@@ -49,6 +51,10 @@ pub fn apply_transforms(
 
     if transforms.offset_amount != 0.0 {
         current_records = offset::transform(&current_records, transforms.offset_amount);
+    }
+
+    if transforms.merge_notes {
+        current_records = merge::transform(&current_records);
     }
 
     if transforms.quantize_grid > 0 {
