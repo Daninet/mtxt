@@ -340,4 +340,21 @@ impl MtxtRecord {
             _ => None,
         }
     }
+
+    pub fn set_time(&mut self, t: BeatTime) {
+        match self {
+            MtxtRecord::Note { time, .. }
+            | MtxtRecord::NoteOn { time, .. }
+            | MtxtRecord::NoteOff { time, .. }
+            | MtxtRecord::ControlChange { time, .. }
+            | MtxtRecord::Tempo { time, .. }
+            | MtxtRecord::TimeSignature { time, .. }
+            | MtxtRecord::Voice { time, .. }
+            | MtxtRecord::Tuning { time, .. }
+            | MtxtRecord::Reset { time, .. }
+            | MtxtRecord::SysEx { time, .. } => *time = t,
+            MtxtRecord::Meta { time, .. } => *time = Some(t),
+            _ => {}
+        }
+    }
 }

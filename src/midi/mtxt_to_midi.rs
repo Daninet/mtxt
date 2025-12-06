@@ -1,6 +1,6 @@
 use crate::file::MtxtFile;
 use crate::types::output_record::MtxtOutputRecord;
-use anyhow::Result;
+use anyhow::{Result, bail};
 use midly::{MetaMessage, MidiMessage, Smf, Timing, TrackEvent, TrackEventKind};
 use std::path::PathBuf;
 
@@ -38,23 +38,33 @@ pub fn convert_mtxt_to_midi(mtxt_file: &MtxtFile, output: &str, verbose: bool) -
 }
 
 fn convert_output_records_to_midi(records: &mut [MtxtOutputRecord]) -> Result<Smf<'_>> {
-    // Use 480 ticks per quarter note (standard resolution)
-    let ticks_per_beat = 480;
-    let timing = Timing::Metrical(midly::num::u15::new(ticks_per_beat));
+    let ppqn = 480;
+    let timing = Timing::Metrical(midly::num::u15::new(ppqn));
 
-    // Create a single track (Format 0)
     let mut track_events = Vec::new();
 
-    // Track current tempo to convert microseconds to beats
-    let mut current_bpm = 120.0; // Default tempo
+    let mut current_bpm = 120.0;
 
-    // Process each output record
+    let mut last_micros = 0u64;
+
     for record in records.iter_mut() {
-        // Convert microseconds to beats using current BPM, then beats to ticks
         let time_micros = record.time();
-        let tick = micros_to_ticks(time_micros, current_bpm, ticks_per_beat);
+        assert!(time_micros >= last_micros);
+        let delta_micros = time_micros - last_micros;
+        last_micros = time_micros;
 
-        // Update current_bpm if this is a tempo change
+        let micros_per_beat = 60_000_000.0 / current_bpm;
+        let delta_beats = delta_micros as f64 / micros_per_beat;
+        let mut delta_tick = (delta_beats * ppqn as f64).round() as u64;
+
+        while delta_tick > midly::num::u28::max_value().as_int() as u64 {
+            track_events.push(TrackEvent {
+                delta: midly::num::u28::max_value(),
+                kind: TrackEventKind::Meta(MetaMessage::Text(b"long delta")),
+            });
+            delta_tick -= midly::num::u28::max_value().as_int() as u64;
+        }
+
         if let MtxtOutputRecord::Tempo { bpm, .. } = record {
             current_bpm = *bpm as f64;
         }
@@ -67,11 +77,14 @@ fn convert_output_records_to_midi(records: &mut [MtxtOutputRecord]) -> Result<Sm
                 ..
             } => {
                 let note_num = note_to_midi_number(note)?;
-                let vel = (*velocity * 127.0).clamp(0.0, 127.0) as u8;
-                let ch = (*channel as u8).min(15);
+                let vel = (*velocity * 127.0) as u8;
+                if *channel > 15 {
+                    bail!("Channel {} out of range for MIDI", *channel);
+                }
+                let ch = *channel as u8;
 
                 track_events.push(TrackEvent {
-                    delta: midly::num::u28::new(tick),
+                    delta: midly::num::u28::new(delta_tick as u32),
                     kind: TrackEventKind::Midi {
                         channel: midly::num::u4::new(ch),
                         message: MidiMessage::NoteOn {
@@ -88,11 +101,14 @@ fn convert_output_records_to_midi(records: &mut [MtxtOutputRecord]) -> Result<Sm
                 ..
             } => {
                 let note_num = note_to_midi_number(note)?;
-                let vel = (*off_velocity * 127.0).clamp(0.0, 127.0) as u8;
-                let ch = (*channel as u8).min(15);
+                let vel = (*off_velocity * 127.0) as u8;
+                if *channel > 15 {
+                    bail!("Channel {} out of range for MIDI", *channel);
+                }
+                let ch = *channel as u8;
 
                 track_events.push(TrackEvent {
-                    delta: midly::num::u28::new(tick),
+                    delta: midly::num::u28::new(delta_tick as u32),
                     kind: TrackEventKind::Midi {
                         channel: midly::num::u4::new(ch),
                         message: MidiMessage::NoteOff {
@@ -108,13 +124,16 @@ fn convert_output_records_to_midi(records: &mut [MtxtOutputRecord]) -> Result<Sm
                 channel,
                 ..
             } => {
-                let ch = (*channel as u8).min(15);
+                if *channel > 15 {
+                    bail!("Channel {} out of range for MIDI", *channel);
+                }
+                let ch = *channel as u8;
 
                 // Convert controller name to MIDI CC number or pitch bend
                 match controller_name_to_midi(controller, *value)? {
                     MidiControllerEvent::CC { number, value } => {
                         track_events.push(TrackEvent {
-                            delta: midly::num::u28::new(tick),
+                            delta: midly::num::u28::new(delta_tick as u32),
                             kind: TrackEventKind::Midi {
                                 channel: midly::num::u4::new(ch),
                                 message: MidiMessage::Controller {
@@ -126,7 +145,7 @@ fn convert_output_records_to_midi(records: &mut [MtxtOutputRecord]) -> Result<Sm
                     }
                     MidiControllerEvent::PitchBend { value } => {
                         track_events.push(TrackEvent {
-                            delta: midly::num::u28::new(tick),
+                            delta: midly::num::u28::new(delta_tick as u32),
                             kind: TrackEventKind::Midi {
                                 channel: midly::num::u4::new(ch),
                                 message: MidiMessage::PitchBend {
@@ -137,7 +156,7 @@ fn convert_output_records_to_midi(records: &mut [MtxtOutputRecord]) -> Result<Sm
                     }
                     MidiControllerEvent::Aftertouch { value } => {
                         track_events.push(TrackEvent {
-                            delta: midly::num::u28::new(tick),
+                            delta: midly::num::u28::new(delta_tick as u32),
                             kind: TrackEventKind::Midi {
                                 channel: midly::num::u4::new(ch),
                                 message: MidiMessage::ChannelAftertouch {
@@ -159,11 +178,17 @@ fn convert_output_records_to_midi(records: &mut [MtxtOutputRecord]) -> Result<Sm
                 // In a more sophisticated implementation, we'd have a voice-to-program mapping
                 if let Some(first_voice) = voices.first() {
                     // Try to parse as a number, otherwise default to 0 (Acoustic Grand Piano)
-                    let program = first_voice.parse::<u8>().unwrap_or(0).min(127);
-                    let ch = (*channel as u8).min(15);
+                    let program = first_voice.parse::<u8>().unwrap_or(0);
+                    if program > 127 {
+                        bail!("Program number out of range for MIDI");
+                    }
+                    if *channel > 15 {
+                        bail!("Channel {} out of range for MIDI", *channel);
+                    }
+                    let ch = *channel as u8;
 
                     track_events.push(TrackEvent {
-                        delta: midly::num::u28::new(tick),
+                        delta: midly::num::u28::new(delta_tick as u32),
                         kind: TrackEventKind::Midi {
                             channel: midly::num::u4::new(ch),
                             message: MidiMessage::ProgramChange {
@@ -174,11 +199,10 @@ fn convert_output_records_to_midi(records: &mut [MtxtOutputRecord]) -> Result<Sm
                 }
             }
             MtxtOutputRecord::Tempo { bpm, .. } => {
-                // Convert BPM to microseconds per quarter note
                 let microseconds_per_quarter = (60_000_000.0 / *bpm) as u32;
 
                 track_events.push(TrackEvent {
-                    delta: midly::num::u28::new(tick),
+                    delta: midly::num::u28::new(delta_tick as u32),
                     kind: TrackEventKind::Meta(MetaMessage::Tempo(midly::num::u24::new(
                         microseconds_per_quarter,
                     ))),
@@ -188,7 +212,7 @@ fn convert_output_records_to_midi(records: &mut [MtxtOutputRecord]) -> Result<Sm
                 let (numerator, denominator) = time_signature_to_midi(signature);
 
                 track_events.push(TrackEvent {
-                    delta: midly::num::u28::new(tick),
+                    delta: midly::num::u28::new(delta_tick as u32),
                     kind: TrackEventKind::Meta(MetaMessage::TimeSignature(
                         numerator,
                         denominator,
@@ -223,27 +247,22 @@ fn convert_output_records_to_midi(records: &mut [MtxtOutputRecord]) -> Result<Sm
                 };
 
                 track_events.push(TrackEvent {
-                    delta: midly::num::u28::new(tick),
+                    delta: midly::num::u28::new(delta_tick as u32),
                     kind: TrackEventKind::Meta(kind),
                 });
             }
             MtxtOutputRecord::Beat { .. } => {}
             MtxtOutputRecord::SysEx { data, .. } => {
                 track_events.push(TrackEvent {
-                    delta: midly::num::u28::new(tick),
+                    delta: midly::num::u28::new(delta_tick as u32),
                     kind: TrackEventKind::SysEx(data),
                 });
             }
         }
     }
 
-    // Sort track by tick time
-    track_events.sort_by_key(|event| event.delta.as_int());
+    // track_events.sort_by_key(|event| event.delta.as_int());
 
-    // Convert absolute timing to relative (delta) timing
-    convert_to_delta_timing(&mut track_events);
-
-    // Add end of track event
     track_events.push(TrackEvent {
         delta: midly::num::u28::new(0),
         kind: TrackEventKind::Meta(MetaMessage::EndOfTrack),
@@ -256,25 +275,4 @@ fn convert_output_records_to_midi(records: &mut [MtxtOutputRecord]) -> Result<Sm
         },
         tracks: vec![track_events],
     })
-}
-
-fn micros_to_ticks(time_micros: u64, bpm: f64, ticks_per_beat: u16) -> u32 {
-    // Convert microseconds to beats using BPM
-    // beats = time_micros / microseconds_per_beat
-    // where microseconds_per_beat = 60_000_000 / bpm
-    let micros_per_beat = 60_000_000.0 / bpm;
-    let beats = time_micros as f64 / micros_per_beat;
-
-    // Convert beats to ticks
-    // ticks = beats * ticks_per_beat
-    (beats * ticks_per_beat as f64) as u32
-}
-
-fn convert_to_delta_timing(events: &mut [TrackEvent]) {
-    let mut last_tick = 0u32;
-    for event in events.iter_mut() {
-        let current_tick = event.delta.as_int();
-        event.delta = midly::num::u28::new(current_tick.saturating_sub(last_tick));
-        last_tick = current_tick;
-    }
 }
