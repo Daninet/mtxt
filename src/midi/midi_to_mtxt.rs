@@ -63,9 +63,6 @@ fn get_midi_single_track_events(smf: &Smf) -> Result<Vec<MidiSingleTrackEvent>> 
     };
 
     for (_track_idx, track) in smf.tracks.iter().enumerate() {
-        if _track_idx != 0 && _track_idx != 8 {
-            continue;
-        }
         let mut current_raw_ticks = 0u64;
 
         // Heuristic: associate track with a channel (Type 1 MIDI)
