@@ -67,6 +67,14 @@ fn main() -> Result<()> {
                 .value_parser(clap::value_parser!(i32)),
         )
         .arg(
+            Arg::new("offset")
+                .help("Offset all events by beats (e.g. 1.5, -0.5)")
+                .long("offset")
+                .allow_hyphen_values(true)
+                .value_name("BEATS")
+                .value_parser(clap::value_parser!(f32)),
+        )
+        .arg(
             Arg::new("include-channels")
                 .help("Include only specific channels (comma-separated, e.g. 1,2,10)")
                 .long("include-channels")
@@ -132,6 +140,7 @@ fn main() -> Result<()> {
     let extract_directives = matches.get_flag("extract-directives");
 
     let transpose_amount = matches.get_one::<i32>("transpose").copied().unwrap_or(0);
+    let offset_amount = matches.get_one::<f32>("offset").copied().unwrap_or(0.0);
     let quantize_grid = matches.get_one::<u32>("quantize").copied().unwrap_or(0);
     let quantize_swing = matches.get_one::<f32>("swing").copied().unwrap_or(0.0);
     let quantize_humanize = matches.get_one::<f32>("humanize").copied().unwrap_or(0.0);
@@ -156,6 +165,7 @@ fn main() -> Result<()> {
         quantize_swing,
         quantize_humanize,
         transpose_amount,
+        offset_amount,
         include_channels,
         exclude_channels,
     };

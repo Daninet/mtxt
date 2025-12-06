@@ -2,6 +2,7 @@ pub mod apply;
 pub mod exclude;
 pub mod extract;
 pub mod include;
+pub mod offset;
 pub mod quantize;
 pub mod sort;
 pub mod transpose;
@@ -17,6 +18,7 @@ pub struct TransformDescriptor {
     pub quantize_swing: f32,
     pub quantize_humanize: f32,
     pub transpose_amount: i32,
+    pub offset_amount: f32,
     pub include_channels: HashSet<u16>,
     pub exclude_channels: HashSet<u16>,
 }
@@ -43,6 +45,10 @@ pub fn apply_transforms(
 
     if transforms.transpose_amount != 0 {
         current_records = transpose::transform(&current_records, transforms.transpose_amount);
+    }
+
+    if transforms.offset_amount != 0.0 {
+        current_records = offset::transform(&current_records, transforms.offset_amount);
     }
 
     if transforms.quantize_grid > 0 {

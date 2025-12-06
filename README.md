@@ -83,6 +83,7 @@ The CLI supports various transforms that can be applied during conversion:
 **Musical Transforms:**
 - `--transpose <SEMITONES>` - Transpose all notes by semitones (e.g., `--transpose +2` or `--transpose -12`)
 - `-q, --quantize <GRID>` - Quantize timing to a grid (e.g., `4` for quarter notes, `16` for 16th notes)
+- `--offset <BEATS>` - Offset all events by beats (e.g., `--offset 1.5`, `--offset -0.5`). Events shifted to negative times are removed.
 - `--swing <AMOUNT>` - Apply swing feel (0.0 to 1.0)
 - `--humanize <AMOUNT>` - Add timing randomization for humanization (0.0 to 1.0)
 
