@@ -1,4 +1,6 @@
+pub mod drums;
 pub mod escape;
+pub mod instruments;
 mod midi_to_mtxt;
 mod mtxt_to_midi;
 pub mod shared;

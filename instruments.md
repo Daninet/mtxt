@@ -114,3 +114,4 @@
 |voice_choir|
 |whistle|
 ||
+|silence|

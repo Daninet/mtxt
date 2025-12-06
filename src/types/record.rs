@@ -14,6 +14,34 @@ pub struct AliasDefinition {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct VoiceList {
+    pub voices: Vec<String>,
+}
+
+impl VoiceList {
+    pub fn parse(s: &str) -> Self {
+        Self {
+            voices: s
+                .split(',')
+                .map(|part| part.trim().to_string())
+                .filter(|part| !part.is_empty())
+                .collect(),
+        }
+    }
+}
+
+impl fmt::Display for VoiceList {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.voices.is_empty() {
+            write!(f, "silence")?;
+        } else {
+            write!(f, " {}", self.voices.join(", "))?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum MtxtRecord {
     Header {
         version: Version,
@@ -87,7 +115,7 @@ pub enum MtxtRecord {
     },
     Voice {
         time: BeatTime,
-        voices: Vec<String>,
+        voices: VoiceList,
         channel: Option<u16>, // channel might be defined by ChannelDirective
     },
 
@@ -252,9 +280,8 @@ impl fmt::Display for MtxtRecord {
                 if let Some(ch) = channel {
                     write!(f, " ch={}", ch)?;
                 }
-                if !voices.is_empty() {
-                    write!(f, " {}", voices.join(", "))?;
-                }
+
+                write!(f, " {}", voices)?;
                 Ok(())
             }
             MtxtRecord::Tempo {

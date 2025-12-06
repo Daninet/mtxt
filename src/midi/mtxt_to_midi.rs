@@ -1,10 +1,12 @@
 use crate::file::MtxtFile;
 use crate::types::output_record::MtxtOutputRecord;
+use crate::types::record::VoiceList;
 use anyhow::{Result, bail};
 use midly::{MetaMessage, MidiMessage, Smf, Timing, TrackEvent, TrackEventKind};
 use std::path::PathBuf;
 
 use super::escape::unescape_string;
+use super::instruments::INSTRUMENTS;
 use super::shared::{
     MidiControllerEvent, controller_name_to_midi, note_to_midi_number, time_signature_to_midi,
 };
@@ -37,10 +39,27 @@ pub fn convert_mtxt_to_midi(mtxt_file: &MtxtFile, output: &str, verbose: bool) -
     Ok(())
 }
 
+fn voice_to_program_change(voice: &VoiceList) -> u8 {
+    for voice in voice.voices.iter().rev() {
+        let voice_lower = voice.to_lowercase();
+        if let Some(instr) = INSTRUMENTS.iter().find(|i| {
+            i.mtxt_name.to_lowercase() == voice_lower || i.gm_name.to_lowercase() == voice_lower
+        }) {
+            return instr.gm_number;
+        }
+
+        if let Ok(num) = voice.parse::<u8>() {
+            return num;
+        }
+    }
+
+    0
+}
+
 fn record_to_track_event(
     record: &mut MtxtOutputRecord,
     delta_tick: u32,
-) -> Result<Option<TrackEvent>> {
+) -> Result<Option<TrackEvent<'_>>> {
     match record {
         MtxtOutputRecord::NoteOn {
             note,
@@ -135,35 +154,27 @@ fn record_to_track_event(
         MtxtOutputRecord::Voice {
             voices, channel, ..
         } => {
-            for voice in voices.iter_mut() {
-                *voice = unescape_string(voice);
+            let program = voice_to_program_change(voices);
+
+            if program > 127 {
+                bail!("Program number out of range for MIDI");
             }
 
-            // For now, just use the first voice as a program change if it's a number
-            // In a more sophisticated implementation, we'd have a voice-to-program mapping
-            if let Some(first_voice) = voices.first() {
-                // Try to parse as a number, otherwise default to 0 (Acoustic Grand Piano)
-                let program = first_voice.parse::<u8>().unwrap_or(0);
-                if program > 127 {
-                    bail!("Program number out of range for MIDI");
-                }
-                if *channel > 15 {
-                    bail!("Channel {} out of range for MIDI", *channel);
-                }
-                let ch = *channel as u8;
+            if *channel > 15 {
+                bail!("Channel {} out of range for MIDI", *channel);
+            }
 
-                Ok(Some(TrackEvent {
-                    delta: midly::num::u28::new(delta_tick),
-                    kind: TrackEventKind::Midi {
-                        channel: midly::num::u4::new(ch),
-                        message: MidiMessage::ProgramChange {
-                            program: midly::num::u7::new(program),
-                        },
+            let ch = *channel as u8;
+
+            Ok(Some(TrackEvent {
+                delta: midly::num::u28::new(delta_tick),
+                kind: TrackEventKind::Midi {
+                    channel: midly::num::u4::new(ch),
+                    message: MidiMessage::ProgramChange {
+                        program: midly::num::u7::new(program),
                     },
-                }))
-            } else {
-                Ok(None)
-            }
+                },
+            }))
         }
         MtxtOutputRecord::Tempo { bpm, .. } => {
             let microseconds_per_quarter = (60_000_000.0 / *bpm) as u32;

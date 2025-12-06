@@ -1,3 +1,4 @@
+use crate::types::record::VoiceList;
 use crate::{
     BeatTime, MtxtRecord, Note, NoteTarget, TimeSignature, Version, types::record::AliasDefinition,
 };
@@ -329,11 +330,7 @@ fn parse_voice_event(time: BeatTime, parts: &[&str]) -> Result<MtxtRecord> {
         bail!("Voice event requires voice list");
     }
 
-    let voices = rest
-        .join(" ")
-        .split(',')
-        .map(|s| s.trim().to_string())
-        .collect();
+    let voices = VoiceList::parse(&rest.join(" "));
 
     Ok(MtxtRecord::Voice {
         time,

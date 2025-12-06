@@ -1,7 +1,8 @@
 use crate::file::MtxtFile;
+use crate::midi::drums;
 use crate::types::beat_time::BeatTime;
 use crate::types::note::NoteTarget;
-use crate::types::record::MtxtRecord;
+use crate::types::record::{MtxtRecord, VoiceList};
 use crate::types::time_signature::TimeSignature;
 use crate::types::version::Version;
 use anyhow::{Result, bail};
@@ -11,6 +12,11 @@ use std::path::PathBuf;
 
 use super::escape::escape_string;
 use super::shared::{midi_cc_to_name, midi_key_signature_to_string, midi_key_to_note};
+
+use super::drums::DRUMS;
+use super::instruments::INSTRUMENTS;
+use crate::types::record::AliasDefinition;
+use std::rc::Rc;
 
 #[derive(Debug)]
 struct MidiSingleTrackEvent {
@@ -142,6 +148,18 @@ fn convert_smf_to_mtxt(smf: &Smf) -> Result<MtxtFile> {
         version: Version { major: 1, minor: 0 },
     });
 
+    // Add drum aliases
+    for drum in DRUMS.iter() {
+        if let Ok(note) = midi_key_to_note(drum.number.into()) {
+            mtxt_file.records.push(MtxtRecord::AliasDef {
+                value: Rc::new(AliasDefinition {
+                    name: drum.slug.to_string(),
+                    notes: vec![note],
+                }),
+            });
+        }
+    }
+
     let all_events = get_midi_single_track_events(smf)?;
     let mut final_events: Vec<MtxtRecord> = Vec::new();
 
@@ -157,6 +175,7 @@ fn convert_smf_to_mtxt(smf: &Smf) -> Result<MtxtFile> {
         fn get_sort_key(record: &MtxtRecord) -> (u8, BeatTime) {
             match record {
                 MtxtRecord::GlobalMeta { .. } => (0, BeatTime::zero()),
+                MtxtRecord::AliasDef { .. } => (0, BeatTime::zero()),
                 MtxtRecord::Meta { time: None, .. } => (1, BeatTime::zero()),
                 MtxtRecord::Header { .. } => (0, BeatTime::zero()),
                 MtxtRecord::Meta { time: Some(t), .. } => (2, *t),
@@ -176,10 +195,13 @@ fn convert_smf_to_mtxt(smf: &Smf) -> Result<MtxtFile> {
         let (group_b, time_b) = get_sort_key(b);
 
         if group_a != group_b {
-            group_a.cmp(&group_b)
-        } else {
-            time_a.cmp(&time_b)
+            return group_a.cmp(&group_b);
         }
+
+        // Preserve original order for stable sort if times are equal
+        // But since this is an unstable sort, we rely on time.
+        // If times are equal, we might want to keep some deterministic order.
+        time_a.cmp(&time_b)
     });
 
     mtxt_file.records.extend(final_events);
@@ -194,22 +216,40 @@ fn convert_midi_message_to_record(
 ) -> Result<MtxtRecord> {
     match msg {
         MidiMessage::NoteOn { key, vel } => {
-            let note = midi_key_to_note(key.as_int())?;
+            let note_target = if channel == 9 {
+                if let Some(drum) = drums::get_drum_by_number(key.as_int()) {
+                    NoteTarget::AliasKey(drum.slug.to_string())
+                } else {
+                    NoteTarget::Note(midi_key_to_note(key.as_int())?)
+                }
+            } else {
+                NoteTarget::Note(midi_key_to_note(key.as_int())?)
+            };
+
             let velocity = vel.as_int() as f32 / 127.0;
             return Ok(MtxtRecord::NoteOn {
                 time: beat_time,
-                note: NoteTarget::Note(note),
+                note: note_target,
                 velocity: Some(velocity),
                 channel: Some(channel),
             });
         }
         MidiMessage::NoteOff { key, vel } => {
-            let note = midi_key_to_note(key.as_int())?;
+            let note_target = if channel == 9 {
+                if let Some(drum) = drums::get_drum_by_number(key.as_int()) {
+                    NoteTarget::AliasKey(drum.slug.to_string())
+                } else {
+                    NoteTarget::Note(midi_key_to_note(key.as_int())?)
+                }
+            } else {
+                NoteTarget::Note(midi_key_to_note(key.as_int())?)
+            };
+
             let off_velocity = vel.as_int() as f32 / 127.0;
 
             return Ok(MtxtRecord::NoteOff {
                 time: beat_time,
-                note: NoteTarget::Note(note),
+                note: note_target,
                 off_velocity: Some(off_velocity),
                 channel: Some(channel),
             });
@@ -230,9 +270,21 @@ fn convert_midi_message_to_record(
             });
         }
         MidiMessage::ProgramChange { program } => {
+            let prog_num = program.as_int();
+            let mut voice_names = Vec::new();
+
+            if let Some(instrument) = INSTRUMENTS.get(prog_num as usize) {
+                voice_names.push(escape_string(instrument.mtxt_name));
+                voice_names.push(escape_string(instrument.gm_name));
+            } else {
+                voice_names.push(prog_num.to_string());
+            }
+
             return Ok(MtxtRecord::Voice {
                 time: beat_time,
-                voices: vec![program.as_int().to_string()],
+                voices: VoiceList {
+                    voices: voice_names,
+                },
                 channel: Some(channel),
             });
         }

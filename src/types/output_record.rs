@@ -1,5 +1,6 @@
 use crate::Note;
 use crate::TimeSignature;
+use crate::types::record::VoiceList;
 use std::fmt;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -25,7 +26,7 @@ pub enum MtxtOutputRecord {
     },
     Voice {
         time: u64,
-        voices: Vec<String>,
+        voices: VoiceList,
         channel: u16,
     },
     Tempo {

@@ -190,6 +190,7 @@ alias <name> <value>
 - `<name>`: Alphanumeric identifier (e.g., `snare`, `Cmaj7`).
 - `<value>`: Target note(s), comma-separated if multiple.
 - No timestamp. Applies to all subsequent events in the file until overridden.
+- Name is case-insensitive.
 - Example:
   ```
   alias snare C2
