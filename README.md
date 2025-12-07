@@ -72,8 +72,9 @@ This repository includes a reference implementation in Rust that provides:
 ### Basic Usage
 
 ```bash
-mid2mtxt input.mid output.mtxt
-mid2mtxt input.mtxt output.mid
+mtxt input.mid output.mtxt # MIDI to MTXT
+mtxt input.mtxt output.mid # MTXT to MIDI
+mtxt input.mtxt output.mtxt --sort # transform MTXT file and sort events by time
 ```
 
 ### Transform Options
@@ -96,6 +97,7 @@ The CLI supports various transforms that can be applied during conversion:
 - `--extract-directives` - Extract common inline parameters into global directives
 - `--merge-notes` - Merge note on / off pairs into note shorthand events with durations
 - `--sort` - Sort events by time
+- `--no-indent` - Disable timestamp padding
 
 ---
 

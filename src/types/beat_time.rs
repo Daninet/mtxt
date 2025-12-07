@@ -58,6 +58,10 @@ impl BeatTime {
         self.repr >> Self::FRAC_BEAT_BITS
     }
 
+    pub fn whole_beats(&self) -> u64 {
+        self.repr_beat()
+    }
+
     fn repr_frac(&self) -> u64 {
         self.repr & Self::FRAC_BEAT_MASK
     }
@@ -118,7 +122,7 @@ impl fmt::Display for BeatTime {
                 break;
             }
         }
-        write!(f, "{}.{}", beat, frac)
+        f.pad(&format!("{}.{}", beat, frac))
     }
 }
 
