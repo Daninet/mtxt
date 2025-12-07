@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MTXT Editor</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>MTXT Editor</h1>
+        <input type="file" id="midi-input" accept=".mid,.midi" class="hidden">
+        <button id="open-btn" class="secondary">Open MIDI</button>
+        <button id="save-btn" class="secondary">Save MIDI</button>
+        <div id="status">Loading WASM...</div>
+    </header>
+
+    <div id="editor-container">
+        <textarea id="editor" spellcheck="false" placeholder="Load a MIDI file or start typing MTXT..."></textarea>
+    </div>
+
+    <div id="transforms-panel">
+        <!-- Quick Actions -->
+        <div class="transform-section">
+            <div class="section-header">
+                <h3>Quick Actions</h3>
+                <div class="checkbox-wrapper">
+                    <input type="checkbox" id="format_padding" checked>
+                    <label for="format_padding" class="checkbox-label">Format Timestamps</label>
+                </div>
+            </div>
+            <div class="button-grid">
+                <button id="btn-apply-directives">Apply Directives</button>
+                <button id="btn-extract-directives">Extract Directives</button>
+                <button id="btn-sort">Sort by Time</button>
+                <button id="btn-merge">Merge Notes</button>
+                <button id="btn-group">Group Channels</button>
+            </div>
+        </div>
+
+        <!-- Other Transformations -->
+        <div class="transform-section">
+            <h3>Other Transformations</h3>
+            <div class="input-group">
+                <select id="transform_type" class="transform-select">
+                    <option value="quantize_grid">Quantize Grid</option>
+                    <option value="quantize_swing">Swing</option>
+                    <option value="quantize_humanize">Humanize</option>
+                    <option value="transpose_amount">Transpose</option>
+                    <option value="offset_amount">Offset</option>
+                    <option value="include_channels">Include Channels</option>
+                    <option value="exclude_channels">Exclude Channels</option>
+                </select>
+                <input type="text" id="transform_value" placeholder="Value" class="flex-grow">
+                <button id="btn-apply-single">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>

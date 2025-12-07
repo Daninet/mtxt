@@ -15,6 +15,9 @@ pub mod util;
 #[cfg(feature = "midi")]
 pub mod midi;
 
+#[cfg(feature = "wasm")]
+pub mod wasm;
+
 // Re-export commonly used types
 pub use file::MtxtFile;
 pub use parser::parse_mtxt;

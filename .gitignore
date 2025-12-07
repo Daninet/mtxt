@@ -1,3 +1,7 @@
+# WASM pkg
+pkg/
+web/pkg/
+
 # Rust build artifacts
 /target/
 Cargo.lock

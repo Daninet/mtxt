@@ -13,6 +13,7 @@ categories = ["multimedia", "encoding", "parser-implementations", "command-line-
 [lib]
 name = "mtxt"
 path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
 
 [[bin]]
 name = "mtxt"
@@ -23,13 +24,19 @@ required-features = ["cli"]
 default = ["midi"]
 midi = ["dep:midly"]
 cli = ["dep:clap"]
+wasm = ["dep:wasm-bindgen", "dep:console_error_panic_hook", "dep:js-sys", "dep:web-sys", "getrandom/js"]
 
 [dependencies]
 clap = { version = "4.4", features = ["derive"], optional = true }
 anyhow = "1.0"
 thiserror = "1.0"
 rand = "0.8"
+getrandom = { version = "0.2" }
 midly = { version = "0.5", default-features = false, features = ["std"], optional = true }
+wasm-bindgen = { version = "0.2", optional = true }
+console_error_panic_hook = { version = "0.1", optional = true }
+js-sys = { version = "0.3", optional = true }
+web-sys = { version = "0.3", features = ["console"], optional = true }
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
