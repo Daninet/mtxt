@@ -5,6 +5,54 @@ use crate::types::record::{MtxtRecord, MtxtRecordLine};
 use crate::types::version::Version;
 use std::fmt;
 
+pub struct MtxtFileFormatter<'a> {
+    file: &'a MtxtFile,
+    timestamp_width: Option<usize>,
+}
+
+impl<'a> fmt::Display for MtxtFileFormatter<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for line in &self.file.records {
+            let record = &line.record;
+            match record {
+                // File-level records don't have timestamps
+                MtxtRecord::Header { .. } | MtxtRecord::GlobalMeta { .. } => {
+                    write!(f, "{}", record)?;
+                }
+                // Formatting-only records
+                MtxtRecord::EmptyLine => {
+                    if let Some(comment) = &line.comment {
+                        write!(f, "// {}", comment)?;
+                    }
+                }
+                // Timed or directive records: print with timestamp
+                _ => {
+                    match record.time() {
+                        Some(time) => {
+                            if let Some(width) = self.timestamp_width {
+                                write!(f, "{:<width$} {}", time, record, width = width)?;
+                            } else {
+                                write!(f, "{} {}", time, record)?;
+                            }
+                        }
+                        None => {
+                            write!(f, "{}", record)?;
+                        }
+                    };
+                }
+            }
+
+            if record != &MtxtRecord::EmptyLine {
+                if let Some(comment) = &line.comment {
+                    write!(f, " // {}", comment)?;
+                }
+            }
+            writeln!(f)?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct MtxtFile {
     pub records: Vec<MtxtRecordLine>,
@@ -64,13 +112,9 @@ impl MtxtFile {
     }
 
     pub fn duration(&self) -> Option<BeatTime> {
-        fn record_time(record: &MtxtRecord) -> Option<BeatTime> {
-            record.time()
-        }
-
         self.records
             .iter()
-            .fold(None, |max, line| match (max, record_time(&line.record)) {
+            .fold(None, |max, line| match (max, line.record.time()) {
                 (Some(m), Some(t)) if t <= m => Some(m),
                 (Some(_), None) => max,
                 (_, Some(t)) => Some(t),
@@ -86,6 +130,13 @@ impl MtxtFile {
             }));
     }
 
+    pub fn calculate_auto_timestamp_width(&self) -> usize {
+        let max_time = self.duration().unwrap_or(BeatTime::zero());
+        let digits = max_time.whole_beats().to_string().len();
+        // digits + 1 (dot) + 5 (fractional digits)
+        digits + 1 + 5
+    }
+
     pub fn get_output_records(&self) -> Vec<MtxtOutputRecord> {
         let records: Vec<MtxtRecord> = self
             .records
@@ -94,50 +145,20 @@ impl MtxtFile {
             .collect();
         process_records(&records)
     }
+
+    pub fn display_with_formatting<'a>(
+        &'a self,
+        timestamp_width: Option<usize>,
+    ) -> MtxtFileFormatter<'a> {
+        MtxtFileFormatter {
+            file: self,
+            timestamp_width,
+        }
+    }
 }
 
 impl fmt::Display for MtxtFile {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut i = 0usize;
-        while i < self.records.len() {
-            let line = &self.records[i];
-            let record = &line.record;
-            let inline_comment = &line.comment;
-            match record {
-                // File-level records don't have timestamps
-                MtxtRecord::Header { .. } | MtxtRecord::GlobalMeta { .. } => {
-                    write!(f, "{}", record)?;
-                    if let Some(comment) = inline_comment {
-                        write!(f, " // {}", comment)?;
-                    }
-                    writeln!(f)?;
-                }
-                // Formatting-only records
-                MtxtRecord::EmptyLine => {
-                    if let Some(comment) = inline_comment {
-                        writeln!(f, "// {}", comment)?;
-                    } else {
-                        writeln!(f)?;
-                    }
-                }
-                // Timed or directive records: print with timestamp
-                _ => {
-                    let time = record.time();
-
-                    let with_time = match time {
-                        Some(time) => format!("{} {}", time, record),
-                        None => format!("{}", record),
-                    };
-
-                    write!(f, "{}", with_time)?;
-                    if let Some(comment) = inline_comment {
-                        write!(f, " // {}", comment)?;
-                    }
-                    writeln!(f)?;
-                }
-            }
-            i += 1;
-        }
-        Ok(())
+        write!(f, "{}", self.display_with_formatting(None))
     }
 }

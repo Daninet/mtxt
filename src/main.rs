@@ -136,6 +136,12 @@ fn main() -> Result<()> {
                 .value_name("AMOUNT")
                 .value_parser(clap::value_parser!(f32)),
         )
+        .arg(
+            Arg::new("indent")
+                .help("Enable timestamp padding")
+                .long("indent")
+                .action(clap::ArgAction::SetTrue),
+        )
         .get_matches();
 
     let input_file = matches.get_one::<String>("input").unwrap();
@@ -151,6 +157,7 @@ fn main() -> Result<()> {
     let quantize_grid = matches.get_one::<u32>("quantize").copied().unwrap_or(0);
     let quantize_swing = matches.get_one::<f32>("swing").copied().unwrap_or(0.0);
     let quantize_humanize = matches.get_one::<f32>("humanize").copied().unwrap_or(0.0);
+    let indent = matches.get_flag("indent");
 
     let include_channels: std::collections::HashSet<u16> = matches
         .get_many::<u16>("include-channels")
@@ -244,7 +251,12 @@ fn main() -> Result<()> {
             if verbose {
                 println!("Writing MTXT file: {}", output_file);
             }
-            let output_content = format!("{}", mtxt_file);
+            let timestamp_width = if indent {
+                Some(mtxt_file.calculate_auto_timestamp_width())
+            } else {
+                None
+            };
+            let output_content = format!("{}", mtxt_file.display_with_formatting(timestamp_width));
             std::fs::write(output_file, output_content)
                 .with_context(|| format!("Failed to write output file: {}", output_file))?;
         }
