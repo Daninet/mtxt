@@ -109,6 +109,12 @@ fn main() -> Result<()> {
                 .action(clap::ArgAction::SetTrue),
         )
         .arg(
+            Arg::new("group-channels")
+                .help("Group events by channel")
+                .long("group-channels")
+                .action(clap::ArgAction::SetTrue),
+        )
+        .arg(
             Arg::new("merge-notes")
                 .help("Merge note on / off pairs into note shorthand events with durations")
                 .long("merge-notes")
@@ -151,6 +157,7 @@ fn main() -> Result<()> {
     let sort_by_time = matches.get_flag("sort");
     let merge_notes = matches.get_flag("merge-notes");
     let extract_directives = matches.get_flag("extract-directives");
+    let group_channels = matches.get_flag("group-channels");
 
     let transpose_amount = matches.get_one::<i32>("transpose").copied().unwrap_or(0);
     let offset_amount = matches.get_one::<f32>("offset").copied().unwrap_or(0.0);
@@ -183,6 +190,7 @@ fn main() -> Result<()> {
         offset_amount,
         include_channels,
         exclude_channels,
+        group_channels,
     };
 
     let input_format = detect_file_format(input_file)

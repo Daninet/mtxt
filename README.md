@@ -98,6 +98,7 @@ The CLI supports various transforms that can be applied during conversion:
 - `--merge-notes` - Merge note on / off pairs into note shorthand events with durations
 - `--sort` - Sort events by time
 - `--no-indent` - Disable timestamp padding
+- `--group-channels` - Group events by channel
 
 ---
 
