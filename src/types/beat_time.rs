@@ -1,7 +1,7 @@
 use anyhow::Result;
 use anyhow::anyhow;
 use std::fmt;
-use std::ops::{Add, Sub};
+use std::ops::{Add, Mul, Sub};
 use std::str::FromStr;
 
 /// Beat-based time notation using fixed-point units
@@ -14,7 +14,7 @@ impl BeatTime {
     /// Number of bits for the sub-beat units.
     const FRAC_BEAT_BITS: u32 = 32;
     /// The number of sub-units in a single beat (2^32).
-    pub const FRAC_BEAT_COUNT: u64 = 1 << Self::FRAC_BEAT_BITS;
+    const FRAC_BEAT_COUNT: u64 = 1 << Self::FRAC_BEAT_BITS;
     /// Bitmask to extract the sub-unit part from the total units.
     const FRAC_BEAT_MASK: u64 = Self::FRAC_BEAT_COUNT - 1;
 
@@ -148,6 +148,15 @@ impl Sub for BeatTime {
     }
 }
 
+impl Mul for BeatTime {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        let units = (self.repr as u128 * rhs.repr as u128) >> Self::FRAC_BEAT_BITS;
+        Self::from_units(units as u64)
+    }
+}
+
 impl FromStr for BeatTime {
     type Err = anyhow::Error;
 
@@ -243,6 +252,19 @@ mod tests {
         let overflow: BeatTime = "0.9".parse().unwrap();
         let sum = time + overflow;
         assert_eq!(sum.to_string(), "5.023");
+    }
+
+    #[test]
+    fn test_mul() {
+        let a: BeatTime = "2.0".parse().unwrap();
+        let b: BeatTime = "1.5".parse().unwrap();
+        let prod = a * b;
+        assert_eq!(prod.to_string(), "3.0");
+
+        let c: BeatTime = "0.5".parse().unwrap();
+        let d: BeatTime = "0.5".parse().unwrap();
+        let prod2 = c * d;
+        assert_eq!(prod2.to_string(), "0.25");
     }
 
     #[test]

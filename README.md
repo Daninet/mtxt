@@ -120,10 +120,19 @@ The CLI supports various transforms that can be applied during conversion:
 
 ## Timing
 
-- All times are in beats specified as fractional numbers. e.g. in a 4/4 time signature, 1 beat = 1 quarter note, so 3.25 represents 3 quarter notes plus 1 sixteenth note.
+- All times are in beats specified as decimal numbers. e.g. in a 4/4 time signature, 1 beat = 1 quarter note, so 3.25 represents 3 quarter notes plus 1 sixteenth note.
 - This allows changing the tempo and time signature without affecting the timing of events.
-- Events may appear in any order in the file; the parser will sort them before playback
+- Events may appear in **any order** in the file; the parser will sort them before playback
 - Precision is limited to 5 decimal places (5 microseconds at 120 BPM).
+
+## Timing with fractional expressions
+
+- Complex timing expressions are also supported (e.g., `1.0+1/4`).
+- Supported expression operators: `+`, `-`, `*`.
+- **Fractions**: Specified as `integer/integer` (e.g., `1/4`, `3/2`).
+- **Multiplication**: Operands must be explicit fractions (e.g., `1/2*2/3`).
+- **Order of operations**: Fractions are evaluated first, then multiplications, then additions and subtractions.
+- No spaces are allowed in the expression.
 
 ## Commands
 

@@ -1,3 +1,5 @@
+pub mod beat_expression;
+pub mod beat_fraction;
 pub mod beat_time;
 pub mod note;
 pub mod output_record;
