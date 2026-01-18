@@ -38,8 +38,8 @@ dur=1.0
 alias kick C2
 alias snare D2
 alias hihat F#2
-alias Cmaj7 C4 E4 G4 B4
-alias Dmin7 D4 F4 A4 C5
+alias Cmaj7 C4,E4,G4,B4
+alias Dmin7 D4,F4,A4,C5
 
 // ========================================
 // Timed Events
